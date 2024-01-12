@@ -3,5 +3,5 @@ kind: ConfigMap
 metadata:
   name: {{ include "request-dataset-deploy.fullname" . }}
 data:
-  jenkins-wrapper.py: |-
+  dataset-deploy-request.py: |-
 {{ .Files.Get "files/dataset-deploy-request.py" | indent 4 }}
