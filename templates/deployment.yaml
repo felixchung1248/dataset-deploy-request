@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "request-dataset-deploy.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "request-dataset-deploy.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "request-dataset-deploy.name" . }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: python-script-volume
+              mountPath: /usr/src/app
+          command: ["python3"]
+          args: ["/usr/src/app/dataset-deploy-request.py"]
+          ports:
+            - containerPort: {{ .Values.service.port }}
+      volumes:
+        - name: python-script-volume
+          configMap:
+            name: {{ include "request-dataset-deploy.fullname" . }}
+            items:
+              - key: dataset-deploy-request.py
+                path: dataset-deploy-request.py

@@ -1,0 +1,18 @@
+replicaCount: 1
+
+image:
+  repository: dataopennesscommunity/demo-golden
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 5001
+  targetPort: 5001
+
+ingress:
+  enabled: true
+  pathPrefix: /request-dataset-deploy
+  # annotations, hosts, and other configurations go here
+
+resources: {}
