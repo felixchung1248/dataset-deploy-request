@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: dataopennesscommunity/demo-golden
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   tag: "latest"
 
 service:
