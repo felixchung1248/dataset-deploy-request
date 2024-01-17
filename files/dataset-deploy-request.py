@@ -1,9 +1,9 @@
 from flask import Flask,request
-import pyodbc
 import json
 import os
 import time
 import requests
+import psycopg2
 
 # Retrieve connection details from environment variables
 # server = os.environ.get('AZURE_SQL_SERVER')
@@ -12,13 +12,25 @@ import requests
 # password = os.environ.get('AZURE_SQL_PASSWORD')
 # jiraUrl = os.environ.get('JIRA_URL')
 
-server = 'datamgmt-felixchung-demo-sql01.database.windows.net'
-database = 'datamgmt-felixchung-demo-db01'
-username = 'dbadmin01'
-password = 'Passw0rd'
 jiraUrl = 'http://localhost:5001/submit-jira'
 
 app = Flask(__name__)
+
+# Database configuration - You might want to store these in environment variables
+db_config = {
+    # 'server': 'postgresql.postgresql-ns.svc.cluster.local',
+    'server': 'datamgmtdemo01.eastasia.cloudapp.azure.com',
+    'database': 'demodb01',
+    'username': 'felixchung',
+    'password': 'Passw0rd',
+    'port': '30432' 
+}
+
+def get_db_connection(db_config):
+    conn_string = f"dbname={db_config['database']} user={db_config['username']} password={db_config['password']} host={db_config['server']} port={db_config['port']}"
+    conn = psycopg2.connect(conn_string)
+    return conn
+
 
 @app.route('/request-dataset-deploy', methods=['POST'])
 def requestDatasetDeploy():
@@ -27,24 +39,13 @@ def requestDatasetDeploy():
         json_array = request.get_json()
     except ValueError:
         return "Invalid JSON", 400
-    
-    connection_string = """
-        Driver={{ODBC Driver 18 for SQL Server}};
-        Server={server};
-        Database={database};
-        Uid={username};
-        Pwd={password};
-        Encrypt=yes;
-        TrustServerCertificate=no;
-        Connection Timeout=30;
-    """.format(server=server, database=database, username=username, password=password)
 
     datasetPath = json_array[0].get('dataset_path')
 
 
     # SQL query to insert JSON string into the table
     sql_query = """
-            INSERT INTO dbo.DATA_CATALOG_DRAFT 
+            INSERT INTO DATA_CATALOG_DRAFT 
             (
                 batch_key
                 ,name
@@ -58,14 +59,14 @@ def requestDatasetDeploy():
                 ,last_modified_datetime
                 ,last_modified_user
             )
-            VALUES (?,?,?,?,?,?,?,?,?,?,?)
+            VALUES (%s,%s,%s,CAST(%s AS BIT),%s,%s,%s,%s,%s,%s,%s)
             """
 
     # Establish a connection to the database
-    with pyodbc.connect(connection_string) as conn:
+    with get_db_connection(db_config) as conn:
         with conn.cursor() as cursor:
             try:
-                cursor.execute(f"select count(1) as cnt from dbo.DATA_CATALOG_DRAFT where status='pending' and dataset_path = '{datasetPath}'")
+                cursor.execute("select count(1) as cnt from DATA_CATALOG_DRAFT where status='pending' and dataset_path = %s",(datasetPath,))
                 # Fetch all the rows
                 rows = cursor.fetchall()
                 for row in rows:
@@ -114,7 +115,8 @@ def requestDatasetDeploy():
                     return 'Get some issue when submitting Jira ticket',9000
     
 
-            except pyodbc.DatabaseError as e:
+            except psycopg2.DatabaseError as e:
+                print(e)
                 conn.rollback()  # Rollback the transaction on error
             finally:
                 conn.rollback()  # Rollback the transaction on error
