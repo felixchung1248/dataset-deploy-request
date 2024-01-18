@@ -42,7 +42,7 @@ def requestDatasetDeploy():
 
     datasetPath = json_array[0].get('dataset_path')
 
-
+    pendingStatusDesc = 'Pending'
     # SQL query to insert JSON string into the table
     sql_query = """
             INSERT INTO DATA_CATALOG_DRAFT 
@@ -66,7 +66,7 @@ def requestDatasetDeploy():
     with get_db_connection(db_config) as conn:
         with conn.cursor() as cursor:
             try:
-                cursor.execute("select count(1) as cnt from DATA_CATALOG_DRAFT where status='pending' and dataset_path = %s",(datasetPath,))
+                cursor.execute("select count(1) as cnt from DATA_CATALOG_DRAFT where status=%s and dataset_path = %s",(pendingStatusDesc,datasetPath,))
                 # Fetch all the rows
                 rows = cursor.fetchall()
                 for row in rows:
@@ -86,7 +86,7 @@ def requestDatasetDeploy():
                     item['is_sensitive'],
                     item['data_type'],
                     item['dataset_path'],
-                    item['status'],
+                    pendingStatusDesc,
                     item['create_datetime'],
                     item['create_user'],
                     item['last_modified_datetime'],
