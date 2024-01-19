@@ -31,6 +31,16 @@ def get_db_connection(db_config):
     conn = psycopg2.connect(conn_string)
     return conn
 
+@app.after_request
+def after_request(response):
+    # Only add CORS headers if the Origin header exists and is from localhost
+    origin = request.headers.get('Origin')
+    if origin and 'localhost' in origin:
+        # Add CORS headers to the response
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
 @app.route('/request-dataset-deploy', methods=['POST'])
 def requestDatasetDeploy():
@@ -53,13 +63,15 @@ def requestDatasetDeploy():
                 ,is_sensitive
                 ,data_type
                 ,dataset_path
+                ,folder_path
+                ,dataset_name
                 ,status
                 ,create_datetime
                 ,create_user
                 ,last_modified_datetime
                 ,last_modified_user
             )
-            VALUES (%s,%s,%s,CAST(%s AS BIT),%s,%s,%s,%s,%s,%s,%s)
+            VALUES (%s,%s,%s,CAST(%s AS BIT),%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
 
     # Establish a connection to the database
@@ -78,6 +90,8 @@ def requestDatasetDeploy():
                 batch_key = int(round(time.time() * 1000))
                 for item in json_array:
                     item['batch_key'] = batch_key
+                    item['folder_path'] = '/'.join(item['dataset_path'].split('/')[1:-1])
+                    item['dataset_name'] = item['dataset_path'].split('/')[-1]
 
                     data_tuple = (
                     batch_key,
@@ -86,6 +100,8 @@ def requestDatasetDeploy():
                     item['is_sensitive'],
                     item['data_type'],
                     item['dataset_path'],
+                    item['folder_path'],
+                    item['dataset_name'],
                     pendingStatusDesc,
                     item['create_datetime'],
                     item['create_user'],
@@ -109,9 +125,11 @@ def requestDatasetDeploy():
                 if response.status_code == 200 and response.text == 'Jira submitted successfully.':
                      # Commit the transaction
                     conn.commit()
+                    # conn.close()
                     return "Data catalog draft can be imported successfully"
                 else:
                     conn.rollback()
+                    conn.close()
                     return 'Get some issue when submitting Jira ticket',9000
     
 
@@ -119,7 +137,7 @@ def requestDatasetDeploy():
                 print(e)
                 conn.rollback()  # Rollback the transaction on error
             finally:
-                conn.rollback()  # Rollback the transaction on error
+                print('process ended')
 
 @app.route('/submit-jira', methods=['POST'])
 def submitJira():
@@ -135,6 +153,8 @@ def submitJira():
     
     datasetPath = data[0].get("dataset_path")
     batchKey = data[0].get("batch_key")
+    datasetName = data[0].get("dataset_name")
+    folderPath = data[0].get("folder_path")
 
     # Use the include_keys list to construct the header row
     header_row = "||" + "||".join(include_keys) + "||"
@@ -158,7 +178,9 @@ def submitJira():
             "summary": f"Request to promote {datasetPath}",
             "customfield_10063": datasetPath,
             "customfield_10003": [{"accountId": "712020:eb83f9a3-84bc-41d7-b911-344efd79bc45"}],
-            "customfield_10064":  str(batchKey)
+            "customfield_10064":  str(batchKey),
+            "customfield_10065": datasetName,
+            "customfield_10066": folderPath,
         },
         "requestTypeId": "37",
         "serviceDeskId": "4"
