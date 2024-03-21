@@ -74,7 +74,7 @@ def submitTicket():
         "group": "Users",
         "customer": "felix.chung@felixchung.org",
         "approved": False,
-        "datasetname": datasetPath
+        "datasetname": datasetPath,
         "article": {
            "subject": "Request dataset deployment",
            "body": f"Request dataset {datasetPath} production deployment. Please review the attached data mapping",
