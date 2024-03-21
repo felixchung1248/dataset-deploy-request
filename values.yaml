@@ -12,7 +12,7 @@ service:
 
 ingress:
   enabled: true
-  pathPrefix: /request-dataset-deploy
+  pathPrefix: /submit-ticket
   # annotations, hosts, and other configurations go here
 
 env:

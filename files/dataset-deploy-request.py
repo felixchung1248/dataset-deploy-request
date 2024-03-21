@@ -16,13 +16,13 @@ app = Flask(__name__)
 
 @app.after_request
 def after_request(response):
-    # # Only add CORS headers if the Origin header exists and is from localhost
-    # origin = request.headers.get('Origin')
-
-    # Add CORS headers to the response
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    # Only add CORS headers if the Origin header exists and is from localhost
+    origin = request.headers.get('Origin')
+    if origin and 'localhost' in origin:
+        # Add CORS headers to the response
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     return response
 
 @app.route('/submit-ticket', methods=['POST'])
