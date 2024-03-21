@@ -15,4 +15,7 @@ ingress:
   pathPrefix: /request-dataset-deploy
   # annotations, hosts, and other configurations go here
 
-resources: {}
+env:
+  TICKET_SYS_URL: http://zammad.zammad-ns.svc.cluster.local:8080/api/v1/tickets
+  TICKET_SYS_USER: felix.chung@felixchung.org
+  TICKET_SYS_PW: ZAQ!2wsxcde3

@@ -23,6 +23,13 @@ spec:
           args: ["/usr/src/app/dataset-deploy-request.py"]
           ports:
             - containerPort: {{ .Values.service.port }}
+          env:
+            - name: TICKET_SYS_URL
+              value: {{ .Values.env.TICKET_SYS_URL }}
+            - name: TICKET_SYS_USER
+              value: {{ .Values.env.TICKET_SYS_USER }}
+            - name: TICKET_SYS_PW
+              value: {{ .Values.env.TICKET_SYS_PW }}
       volumes:
         - name: python-script-volume
           configMap:
